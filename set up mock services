@@ -1,0 +1,1 @@
+keep your code modular, we will separate the actual network requests into a PaymentGatewayService and then use Jest to mock that network dependency. This ensures your unit tests never make real HTTP calls.
