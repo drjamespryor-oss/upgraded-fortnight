@@ -1,0 +1,86 @@
+// ============================================================================
+// 1. Constants & Types
+// ============================================================================
+
+/**
+ * PCI DSS Merchant Levels mapping transaction volume thresholds to their metadata.
+ */
+export const PCI_MERCHANT_LEVELS = {
+  LEVEL_1: {
+    name: 'Level 1',
+    description: 'Processes over 6 million card transactions per year.',
+  },
+  LEVEL_2: {
+    name: 'Level 2',
+    description: 'Processes 1 to 6 million card transactions per year.',
+  },
+  LEVEL_3: {
+    name: 'Level 3',
+    description: 'Processes 20,000 to 1 million card transactions per year.',
+  },
+  LEVEL_4: {
+    name: 'Level 4',
+    description: 'Processes fewer than 20,000 transactions per year.',
+  },
+} as const;
+
+export type MerchantLevel = keyof typeof PCI_MERCHANT_LEVELS;
+
+export interface Pledge {
+  readonly id: string;
+  readonly amount: number;
+  readonly donorName: string;
+  status: 'pending' | 'collected' | 'failed';
+}
+
+// ============================================================================
+// 2. Main SaaS Core Class
+// ============================================================================
+
+/**
+ * SaaS Remote Work Platform for Fund Administrators.
+ * Handles pledge collection and tracks compliance based on transaction volume.
+ */
+export class FundAdministratorSaaS {
+  private totalAnnualTransactions = 0;
+
+  constructor(
+    public readonly adminId: string,
+    public readonly companyName: string,
+  ) {}
+
+  /**
+   * Evaluates the current merchant level based on total transaction volume.
+   */
+  public getMerchantLevel(): MerchantLevel {
+    const txCount = this.totalAnnualTransactions;
+
+    if (txCount > 6_000_000) return 'LEVEL_1';
+    if (txCount >= 1_000_000) return 'LEVEL_2';
+    if (txCount >= 20_000) return 'LEVEL_3';
+    return 'LEVEL_4';
+  }
+
+  /**
+   * Process and collect pending pledges within the system.
+   * Throws an error if the pledge cannot be collected.
+   */
+  public collectPledge(pledge: Pledge): void {
+    if (pledge.status !== 'pending') {
+      throw new Error(`Cannot collect pledge ${pledge.id}: status is already '${pledge.status}'`);
+    }
+
+    pledge.status = 'collected';
+    this.totalAnnualTransactions++;
+    
+    // Using clean template literals for status logging
+    console.log(`[Success] Collected $${pledge.amount} from ${pledge.donorName}`);
+  }
+
+  /**
+   * Getter to expose the transaction total safely without direct mutation.
+   */
+  public get transactionCount(): number {
+    return this.totalAnnualTransactions;
+  }
+}
